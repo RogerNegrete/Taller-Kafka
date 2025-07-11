@@ -53,7 +53,6 @@ services:
       - "8003:8000"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MAILTRAP_TOKEN: "ac4cedd284b816a8da7acbe1bf7174f2"  # ✅ AGREGAR ESTA LÍNEA
     depends_on:
       - kafka
     restart: on-failure

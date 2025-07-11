@@ -1,12 +1,15 @@
 from confluent_kafka import Consumer
+from dotenv import load_dotenv
 import os, json
 import requests
 
-# 🔧 USAR VARIABLE DE ENTORNO EN LUGAR DE HARDCODEAR
-MAILTRAP_TOKEN = os.getenv("MAILTRAP_TOKEN", "ac4cedd284b816a8da7acbe1bf7174f2")
+# USAR VARIABLE DE ENTORNO EN LUGAR DE HARDCODEAR
+load_dotenv()
+
+MAILTRAP_TOKEN = os.getenv("MAILTRAP_TOKEN")
 
 def send_success_email(order_id, item, quantity):
-    url = "https://sandbox.api.mailtrap.io/api/send/3882249"
+    url = "https://sandbox.api.mailtrap.io/api/send/3882646"
     
     payload = {
         "from": {
@@ -15,7 +18,7 @@ def send_success_email(order_id, item, quantity):
         },
         "to": [
             {
-                "email": "rnegretec@est.ups.edu.ec"
+                "email": "chelinv2004@gmail.com"
             }
         ],
         "subject": "✅ Orden Confirmada Exitosamente!",
@@ -37,7 +40,7 @@ def send_success_email(order_id, item, quantity):
         return False
 
 def send_rejection_email(order_id, item, quantity, reason):
-    url = "https://sandbox.api.mailtrap.io/api/send/3882249"
+    url = "https://sandbox.api.mailtrap.io/api/send/3882646"
     
     # 🔍 PERSONALIZAR ASUNTO Y MENSAJE SEGÚN EL MOTIVO
     if "no existe" in reason.lower() or "not found" in reason.lower():
@@ -54,7 +57,7 @@ def send_rejection_email(order_id, item, quantity, reason):
         },
         "to": [
             {
-                "email": "rnegretec@est.ups.edu.ec"
+                "email": "chelinv2004@gmail.com"
             }
         ],
         "subject": subject,

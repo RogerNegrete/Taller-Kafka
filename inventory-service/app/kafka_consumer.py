@@ -28,29 +28,27 @@ while True:
     
     # Responder a solicitudes de stock
     if event["type"] == "stock_request":
-        print(f"Processing stock request for order {event['data']['order_id']}")
         data = event["data"]
         db = SessionLocal()
         product = db.query(Product).filter_by(name=data["item"]).first()
         
         if product:
+            # 🔍 AQUÍ SE VALIDA EL STOCK
             available = product.stock >= data["quantity"]
-            print(f"Product {data['item']} found. Stock: {product.stock}, Requested: {data['quantity']}, Available: {available}")
+            
+            # 📤 ENVÍA RESPUESTA VIA KAFKA
             send_stock_response({
                 "order_id": data["order_id"],
                 "item": data["item"],
                 "quantity": data["quantity"],
-                "available": available,
+                "available": available,  # ✅ True si hay stock, ❌ False si no hay
                 "current_stock": product.stock
             })
         else:
-            print(f"Product {data['item']} not found")
+            # 📤 PRODUCTO NO EXISTE
             send_stock_response({
                 "order_id": data["order_id"],
-                "item": data["item"],
-                "quantity": data["quantity"],
                 "available": False,
-                "current_stock": 0,
                 "error": "Product not found"
             })
         db.close()

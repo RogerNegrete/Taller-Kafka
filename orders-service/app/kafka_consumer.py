@@ -4,9 +4,6 @@ from db import SessionLocal
 from models import Order
 from kafka_producer import send_inventory_event, send_notification_event
 
-# Diccionario compartido para órdenes pendientes
-pending_orders = {}
-
 consumer = Consumer({
     'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
     'group.id': 'orders-group',
@@ -31,46 +28,43 @@ while True:
     if event["type"] == "stock_response":
         data = event["data"]
         order_id = data["order_id"]
-        print(f"Processing stock response for order {order_id}")
         
-        if data["available"]:
-            # Stock disponible - procesar orden
-            print(f"Stock available for order {order_id}")
-            
-            # Actualizar stock
-            send_inventory_event({
-                "order_id": order_id,
-                "item": data["item"],
-                "quantity": data["quantity"]
-            })
-            
-            # Enviar notificación de orden exitosa
-            send_notification_event({
-                "order_id": order_id,
-                "item": data["item"],
-                "quantity": data["quantity"],
-                "status": "success"
-            })
-            
-            print(f"Order {order_id} confirmed - Stock available")
-            
-        else:
-            # Stock insuficiente - cancelar orden
-            print(f"Order {order_id} cancelled - {data.get('error', 'Insufficient stock')}")
-            
-            # Enviar notificación de orden rechazada
-            send_notification_event({
-                "order_id": order_id,
-                "item": data["item"],
-                "quantity": data["quantity"],
-                "status": "rejected",
-                "reason": data.get('error', 'Stock insuficiente')
-            })
-            
-            # Eliminar orden de la base de datos
-            db = SessionLocal()
-            order = db.query(Order).filter_by(id=order_id).first()
-            if order:
-                db.delete(order)
+        # Update order status in database
+        db = SessionLocal()
+        order = db.query(Order).filter_by(id=order_id).first()
+        
+        if order:
+            if data["available"]:  # ✅ HAY STOCK
+                # Update order status to accepted
+                order.status = "accepted"
                 db.commit()
-            db.close()
+                
+                # 📧 ENVÍA NOTIFICACIÓN DE ÉXITO
+                send_notification_event({
+                    "order_id": order_id,
+                    "item": data["item"],
+                    "quantity": data["quantity"],
+                    "status": "accepted"
+                })
+                
+                # 📦 ACTUALIZA EL STOCK
+                send_inventory_event({
+                    "order_id": order_id,
+                    "item": data["item"],
+                    "quantity": data["quantity"]
+                })
+            else:  # ❌ NO HAY STOCK
+                # Update order status to rejected
+                order.status = "rejected"
+                db.commit()
+                
+                # 📧 ENVÍA NOTIFICACIÓN DE RECHAZO
+                send_notification_event({
+                    "order_id": order_id,
+                    "item": data["item"],
+                    "quantity": data["quantity"],
+                    "status": "rejected",
+                    "reason": data.get("error", "Stock insuficiente")
+                })
+        
+        db.close()

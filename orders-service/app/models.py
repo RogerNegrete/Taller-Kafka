@@ -7,3 +7,4 @@ class Order(Base):
     id = Column(Integer, primary_key=True)
     item = Column(String)
     quantity = Column(Integer)
+    status = Column(String, default="pending")  # pending, accepted, rejected

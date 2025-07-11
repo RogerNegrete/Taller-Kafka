@@ -15,21 +15,13 @@ class OrderIn(BaseModel):
 def create_order(order: OrderIn):
     db = SessionLocal()
     
-    # Crear orden temporalmente
-    new_order = Order(item=order.item, quantity=order.quantity)
+    # Crear orden temporalmente con status pending
+    new_order = Order(item=order.item, quantity=order.quantity, status="pending")
     db.add(new_order)
     db.commit()
-    db.refresh(new_order)
     
     # Solicitar verificación de stock
     send_stock_request({
-        "order_id": new_order.id,
-        "item": new_order.item,
-        "quantity": new_order.quantity
-    })
-    
-    # Enviar notificación inmediata (como funcionaba antes)
-    send_notification_event({
         "order_id": new_order.id,
         "item": new_order.item,
         "quantity": new_order.quantity
@@ -52,7 +44,7 @@ def get_order_status(order_id: int):
     if order:
         return {
             "order_id": order_id,
-            "status": "exists",
+            "status": order.status,
             "item": order.item,
             "quantity": order.quantity
         }
@@ -68,4 +60,4 @@ def get_all_orders():
     orders = db.query(Order).all()
     db.close()
     
-    return [{"id": order.id, "item": order.item, "quantity": order.quantity} for order in orders]
+    return [{"id": order.id, "item": order.item, "quantity": order.quantity, "status": order.status} for order in orders]

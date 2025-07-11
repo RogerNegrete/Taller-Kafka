@@ -88,15 +88,17 @@ while True:
     if event["type"] == "confirm_order":
         data = event["data"]
         
-        # Verificar si es una orden exitosa o rechazada
+        # 🔍 DECIDE QUÉ EMAIL ENVIAR BASADO EN EL STATUS
         if data.get("status") == "rejected":
-            print(f"Sending REJECTION email for order {data['order_id']}")
+            # ❌ ENVÍA EMAIL DE RECHAZO
             send_rejection_email(
                 data["order_id"], 
                 data["item"], 
                 data["quantity"], 
                 data.get("reason", "Stock insuficiente")
             )
-        else:
-            print(f"Sending SUCCESS email for order {data['order_id']}")
+        elif data.get("status") == "accepted":
+            # ✅ ENVÍA EMAIL DE ÉXITO
             send_success_email(data["order_id"], data["item"], data["quantity"])
+        else:
+            print(f"Unknown status: {data.get('status')}")

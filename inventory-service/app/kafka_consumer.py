@@ -36,20 +36,33 @@ while True:
             # 🔍 AQUÍ SE VALIDA EL STOCK
             available = product.stock >= data["quantity"]
             
-            # 📤 ENVÍA RESPUESTA VIA KAFKA
+            if available:
+                # ✅ HAY STOCK SUFICIENTE
+                send_stock_response({
+                    "order_id": data["order_id"],
+                    "item": data["item"],
+                    "quantity": data["quantity"],
+                    "available": True,
+                    "current_stock": product.stock
+                })
+            else:
+                # ❌ STOCK INSUFICIENTE
+                send_stock_response({
+                    "order_id": data["order_id"],
+                    "item": data["item"],
+                    "quantity": data["quantity"],
+                    "available": False,
+                    "current_stock": product.stock,
+                    "error": "Stock insuficiente"
+                })
+        else:
+            # 🚫 PRODUCTO NO EXISTE
             send_stock_response({
                 "order_id": data["order_id"],
                 "item": data["item"],
                 "quantity": data["quantity"],
-                "available": available,  # ✅ True si hay stock, ❌ False si no hay
-                "current_stock": product.stock
-            })
-        else:
-            # 📤 PRODUCTO NO EXISTE
-            send_stock_response({
-                "order_id": data["order_id"],
                 "available": False,
-                "error": "Product not found"
+                "error": "El producto no existe en nuestro inventario"
             })
         db.close()
     

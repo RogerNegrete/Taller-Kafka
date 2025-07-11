@@ -2,7 +2,8 @@ from confluent_kafka import Consumer
 import os, json
 import requests
 
-MAILTRAP_TOKEN = "ac4cedd284b816a8da7acbe1bf7174f2"
+# 🔧 USAR VARIABLE DE ENTORNO EN LUGAR DE HARDCODEAR
+MAILTRAP_TOKEN = os.getenv("MAILTRAP_TOKEN", "ac4cedd284b816a8da7acbe1bf7174f2")
 
 def send_success_email(order_id, item, quantity):
     url = "https://sandbox.api.mailtrap.io/api/send/3882249"
@@ -38,6 +39,14 @@ def send_success_email(order_id, item, quantity):
 def send_rejection_email(order_id, item, quantity, reason):
     url = "https://sandbox.api.mailtrap.io/api/send/3882249"
     
+    # 🔍 PERSONALIZAR ASUNTO Y MENSAJE SEGÚN EL MOTIVO
+    if "no existe" in reason.lower() or "not found" in reason.lower():
+        subject = "❌ Orden Rechazada - Producto No Disponible"
+        message = f"Orden rechazada\nOrden #{order_id} - Producto: {item} - Cantidad: {quantity}\n\nMotivo: {reason}\n\nEl producto solicitado no está disponible en nuestro catálogo."
+    else:
+        subject = "❌ Orden Rechazada - Stock Insuficiente"
+        message = f"Orden rechazada\nOrden #{order_id} - Producto: {item} - Cantidad: {quantity}\n\nMotivo: {reason}\n\nNo tenemos suficiente stock para procesar tu orden."
+    
     payload = {
         "from": {
             "email": "hello@example.com",
@@ -48,8 +57,8 @@ def send_rejection_email(order_id, item, quantity, reason):
                 "email": "rnegretec@est.ups.edu.ec"
             }
         ],
-        "subject": "❌ Orden Rechazada - Stock Insuficiente",
-        "text": f"Orden rechazada\nOrden #{order_id} - Producto: {item} - Cantidad: {quantity}\n\nMotivo: {reason}\n\nLo sentimos, no pudimos procesar tu orden.",
+        "subject": subject,
+        "text": message,
         "category": "Orden Rechazada"
     }
     

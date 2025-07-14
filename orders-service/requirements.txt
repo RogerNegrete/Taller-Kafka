@@ -3,3 +3,4 @@ uvicorn
 sqlalchemy
 confluent-kafka
 mailtrap
+psycopg2-binary
